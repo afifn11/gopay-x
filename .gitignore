@@ -30,3 +30,21 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Binary outputs
+bin/
+*.exe
+
+# Go workspace
+go.work.sum
+
+# Docker volumes
+.docker/
+
+# IDE
+.vscode/settings.json
