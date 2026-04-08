@@ -62,7 +62,7 @@ go run cmd/main.go
 
 - [x] Project structure & infrastructure setup
 - [x] auth-service
-- [ ] user-service
+- [x] user-service
 - [ ] wallet-service
 - [ ] payment-service
 - [ ] transaction-service
