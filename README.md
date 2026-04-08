@@ -61,7 +61,7 @@ go run cmd/main.go
 ## Project Status
 
 - [x] Project structure & infrastructure setup
-- [ ] auth-service
+- [x] auth-service
 - [ ] user-service
 - [ ] wallet-service
 - [ ] payment-service
