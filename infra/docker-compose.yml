@@ -72,9 +72,45 @@ services:
     networks:
       - gopay_network
 
+# ─── Prometheus ───────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: gopay_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - gopay_network
+
+  # ─── Grafana ──────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: gopay_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: gopay_grafana
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - gopay_network
+
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   gopay_network:

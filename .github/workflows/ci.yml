@@ -1,0 +1,98 @@
+name: GoPayX CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ─── Lint & Build Check ───────────────────────────────────
+  build:
+    name: Build All Services
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Setup Go workspace
+        run: go work sync
+
+      - name: Build auth-service
+        working-directory: services/auth-service
+        run: go build ./...
+
+      - name: Build user-service
+        working-directory: services/user-service
+        run: go build ./...
+
+      - name: Build wallet-service
+        working-directory: services/wallet-service
+        run: go build ./...
+
+      - name: Build payment-service
+        working-directory: services/payment-service
+        run: go build ./...
+
+      - name: Build transaction-service
+        working-directory: services/transaction-service
+        run: go build ./...
+
+      - name: Build notification-service
+        working-directory: services/notification-service
+        run: go build ./...
+
+      - name: Build fraud-detection-service
+        working-directory: services/fraud-detection-service
+        run: go build ./...
+
+      - name: Build audit-service
+        working-directory: services/audit-service
+        run: go build ./...
+
+      - name: Build api-gateway
+        working-directory: api-gateway
+        run: go build ./...
+
+  # ─── Security Scan ────────────────────────────────────────
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: '-exclude-dir=vendor ./services/auth-service/...'
+        continue-on-error: true
+
+  # ─── Docker Build Check ───────────────────────────────────
+  docker:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build auth-service Docker image
+        run: |
+          docker build -t gopay-x/auth-service:${{ github.sha }} \
+            ./services/auth-service
+
+      - name: Build api-gateway Docker image
+        run: |
+          docker build -t gopay-x/api-gateway:${{ github.sha }} \
+            ./api-gateway
