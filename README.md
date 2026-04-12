@@ -69,6 +69,6 @@ go run cmd/main.go
 - [x] notification-service
 - [x] fraud-detection-service
 - [x] audit-service
-- [ ] API Gateway
-- [ ] CI/CD Pipeline
-- [ ] Monitoring & Tracing
+- [x] API Gateway
+- [x] CI/CD Pipeline
+- [x] Monitoring & Tracing
