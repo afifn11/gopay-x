@@ -1,0 +1,68 @@
+package config
+
+import (
+	"log"
+
+	"github.com/spf13/viper"
+)
+
+type Config struct {
+	App      AppConfig
+	Database DatabaseConfig
+	JWT      JWTConfig
+	Kafka    KafkaConfig
+}
+
+type AppConfig struct {
+	Name string
+	Port string
+	Env  string
+}
+
+type DatabaseConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
+}
+
+type JWTConfig struct {
+	AccessSecret string
+}
+
+type KafkaConfig struct {
+	Brokers string
+}
+
+func Load() *Config {
+	viper.SetConfigFile(".env")
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err != nil {
+		log.Println("No .env file found, reading from environment variables")
+	}
+
+	return &Config{
+		App: AppConfig{
+			Name: viper.GetString("APP_NAME"),
+			Port: viper.GetString("APP_PORT"),
+			Env:  viper.GetString("APP_ENV"),
+		},
+		Database: DatabaseConfig{
+			Host:     viper.GetString("DB_HOST"),
+			Port:     viper.GetString("DB_PORT"),
+			User:     viper.GetString("DB_USER"),
+			Password: viper.GetString("DB_PASSWORD"),
+			DBName:   viper.GetString("DB_NAME"),
+			SSLMode:  viper.GetString("DB_SSLMODE"),
+		},
+		JWT: JWTConfig{
+			AccessSecret: viper.GetString("JWT_ACCESS_SECRET"),
+		},
+		Kafka: KafkaConfig{
+			Brokers: viper.GetString("KAFKA_BROKERS"),
+		},
+	}
+}
