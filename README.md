@@ -65,10 +65,10 @@ go run cmd/main.go
 - [x] user-service
 - [x] wallet-service
 - [X] payment-service
-- [ ] transaction-service
-- [ ] notification-service
-- [ ] fraud-detection-service
-- [ ] audit-service
+- [x] transaction-service
+- [x] notification-service
+- [x] fraud-detection-service
+- [x] audit-service
 - [ ] API Gateway
 - [ ] CI/CD Pipeline
 - [ ] Monitoring & Tracing
