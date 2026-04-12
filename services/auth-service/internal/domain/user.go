@@ -3,7 +3,7 @@ package domain
 import (
 	"time"
 	"github.com/google/uuid"
-	""gorm.io/gorm""
+	"gorm.io/gorm"
 )
 
 type KYCStatus string
