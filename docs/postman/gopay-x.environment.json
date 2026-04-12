@@ -1,0 +1,61 @@
+{
+  "id": "gopay-x-environment",
+  "name": "GoPayX - Local",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "user_email",
+      "value": "test@gopay.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "user_password",
+      "value": "password123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "reference_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "payment_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "transaction_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

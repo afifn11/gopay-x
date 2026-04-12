@@ -1,0 +1,832 @@
+{
+  "info": {
+    "name": "GoPayX API",
+    "description": "Enterprise Digital Wallet & Payment Platform\n\n## Overview\nGoPayX is a production-ready microservices-based digital wallet platform built with Go.\n\n## Services\n- **API Gateway** :8080 — Single entry point\n- **Auth Service** :8081 — JWT Authentication\n- **User Service** :8082 — Profile & KYC\n- **Wallet Service** :8083 — Balance Management\n- **Payment Service** :8084 — Transfers & Gateway\n- **Transaction Service** :8085 — Immutable Ledger\n- **Notification Service** :8086 — Event-driven Alerts\n- **Fraud Detection** :8087 — Rule-based Scoring\n- **Audit Service** :8088 — Full Audit Trail\n\n## Authentication\nAll protected endpoints require `Bearer {{access_token}}` header.\nLogin first to get your token — it will be auto-injected via test scripts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "🏥 Health Checks",
+      "item": [
+        {
+          "name": "Gateway Health",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "description": "Check API Gateway health status"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Service is api-gateway', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.equal('ok');",
+                  "  pm.expect(json.service).to.equal('api-gateway');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "All Services Info",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health/services",
+            "description": "Get all registered service URLs"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has all services', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.services).to.have.property('auth-service');",
+                  "  pm.expect(json.services).to.have.property('wallet-service');",
+                  "  pm.expect(json.services).to.have.property('payment-service');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔐 Auth Service",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/register",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Doe\",\n  \"email\": \"{{user_email}}\",\n  \"phone\": \"081234567890\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "description": "Register a new user account"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has user data', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.message).to.equal('registration successful');",
+                  "  pm.expect(json.user).to.have.property('id');",
+                  "  pm.expect(json.user).to.have.property('email');",
+                  "  pm.environment.set('user_id', json.user.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/login",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "description": "Login and get JWT access + refresh token"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has tokens', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('access_token');",
+                  "  pm.expect(json.data).to.have.property('refresh_token');",
+                  "  pm.environment.set('access_token', json.data.access_token);",
+                  "  pm.environment.set('refresh_token', json.data.refresh_token);",
+                  "  console.log('✅ Tokens saved to environment');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/auth/validate",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Validate current access token and get claims"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has claims', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('user_id');",
+                  "  pm.expect(json.data).to.have.property('email');",
+                  "  pm.environment.set('user_id', json.data.user_id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/refresh",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "description": "Get new access token using refresh token"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('New tokens received', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.environment.set('access_token', json.data.access_token);",
+                  "  pm.environment.set('refresh_token', json.data.refresh_token);",
+                  "  console.log('✅ Tokens refreshed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/logout",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "description": "Logout and blacklist access token"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Logout successful', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.message).to.equal('logout successful');",
+                  "  pm.environment.set('access_token', '');",
+                  "  pm.environment.set('refresh_token', '');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "👤 User Service",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/users/me",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get authenticated user profile"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 404', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/v1/users/me",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Doe Updated\",\n  \"gender\": \"male\",\n  \"date_of_birth\": \"1995-06-15\",\n  \"address\": \"Jl. Sudirman No. 1\",\n  \"city\": \"Jakarta\"\n}"
+            },
+            "description": "Update authenticated user profile"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit KYC",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/users/me/kyc",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document_type\": \"ktp\",\n  \"document_url\": \"https://storage.gopay-x.dev/kyc/ktp-sample.jpg\"\n}"
+            },
+            "description": "Submit KYC document for verification"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('KYC submitted', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.message).to.include('KYC');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💰 Wallet Service",
+      "item": [
+        {
+          "name": "Create Wallet",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/wallets",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Create a new wallet for authenticated user"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 or 409', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  console.log('✅ Wallet created:', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Wallet Balance",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/wallets",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get wallet balance and status"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has balance', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('balance');",
+                  "  pm.expect(json.data).to.have.property('status');",
+                  "  console.log('💰 Balance:', json.data.balance);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Top Up Wallet",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/wallets/topup",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100000,\n  \"reference_id\": \"topup-{{$randomUUID}}\",\n  \"description\": \"Top up via test\"\n}"
+            },
+            "description": "Top up wallet balance (idempotent with reference_id)"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('reference_id', 'topup-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Top up recorded', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.message).to.include('top up');",
+                  "  pm.expect(json.data).to.have.property('balance_after');",
+                  "  console.log('✅ Balance after:', json.data.balance_after);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Transaction History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallets/transactions?page=1&limit=10",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get paginated wallet transaction history"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has pagination', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('total');",
+                  "  pm.expect(json.data).to.have.property('page');",
+                  "  pm.expect(json.data).to.have.property('data');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💳 Payment Service",
+      "item": [
+        {
+          "name": "Transfer to User",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/payments/transfer",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"receiver_user_id\": \"RECEIVER_USER_ID_HERE\",\n  \"amount\": 50000,\n  \"reference_id\": \"transfer-{{$randomUUID}}\",\n  \"description\": \"Transfer test\"\n}"
+            },
+            "description": "Transfer funds to another user wallet"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('reference_id', 'transfer-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 or 400', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201, 400, 422]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.environment.set('payment_id', json.data.id);",
+                  "  console.log('✅ Payment ID:', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Top Up via Gateway",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/payments/topup",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 200000,\n  \"reference_id\": \"gw-topup-{{$randomUUID}}\",\n  \"description\": \"Top up via Midtrans mock\"\n}"
+            },
+            "description": "Create top up via mock payment gateway (Midtrans simulation)"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('reference_id', 'gw-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has payment URL', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('id');",
+                  "  pm.expect(json.data.status).to.equal('pending');",
+                  "  pm.environment.set('payment_id', json.data.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/payments/{{payment_id}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get payment details by ID"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has payment data', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('id');",
+                  "  pm.expect(json.data).to.have.property('status');",
+                  "  pm.expect(json.data).to.have.property('amount');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Payment History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments?page=1&limit=10",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get paginated payment history"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment Callback (Webhook)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/payments/callback",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"external_id\": \"{{payment_id}}\",\n  \"status\": \"success\",\n  \"raw_payload\": \"{\\\"order_id\\\":\\\"test\\\",\\\"transaction_status\\\":\\\"settlement\\\"}\"\n}"
+            },
+            "description": "Simulate payment gateway webhook callback"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📊 Transaction Service",
+      "item": [
+        {
+          "name": "Get Transaction History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/transactions?page=1&limit=10",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "type", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true },
+                { "key": "from", "value": "", "disabled": true },
+                { "key": "to", "value": "", "disabled": true }
+              ]
+            },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get paginated transaction history with optional filters:\n- `type`: top_up / transfer / withdraw / refund\n- `status`: success / failed / pending\n- `from`: date (YYYY-MM-DD)\n- `to`: date (YYYY-MM-DD)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has pagination data', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('total');",
+                  "  pm.expect(json.data).to.have.property('data');",
+                  "  if (json.data.data.length > 0) {",
+                  "    pm.environment.set('transaction_id', json.data.data[0].id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Transaction Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/transactions/summary?from=2026-01-01&to=2026-12-31",
+              "query": [
+                { "key": "from", "value": "2026-01-01" },
+                { "key": "to", "value": "2026-12-31" }
+              ]
+            },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get transaction summary (total in/out/fee) for date range"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has summary data', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('total_in');",
+                  "  pm.expect(json.data).to.have.property('total_out');",
+                  "  pm.expect(json.data).to.have.property('total_fee');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Transaction by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/transactions/{{transaction_id}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get specific transaction details"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 404', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔍 Fraud Detection (Admin)",
+      "item": [
+        {
+          "name": "Get User Fraud Checks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/fraud/users/{{user_id}}/checks?page=1&limit=10",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get fraud check history for a user (Admin only)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User Risk Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/fraud/users/{{user_id}}/risk-profile",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get fraud risk profile for a user (Admin only)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📋 Audit Service (Admin)",
+      "item": [
+        {
+          "name": "Query Audit Logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/audit/logs?page=1&limit=20",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "service", "value": "", "disabled": true },
+                { "key": "event", "value": "", "disabled": true },
+                { "key": "from", "value": "", "disabled": true },
+                { "key": "to", "value": "", "disabled": true }
+              ]
+            },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Query audit logs with filters (Admin only)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Logs by Actor",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/audit/actors/{{user_id}}?page=1&limit=20",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "description": "Get all audit logs for a specific actor/user (Admin only)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
